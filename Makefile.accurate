@@ -1,0 +1,82 @@
+# Makefile for accurate LuaJIT memory calculators
+
+CC = gcc
+CFLAGS = -Wall -O2 -fPIC -shared
+LDFLAGS = 
+
+# LuaJIT路径
+LUAJIT_INC = /usr/local/include/luajit-2.1
+LUAJIT_LIB = /usr/local/lib
+
+# 或使用pkg-config
+# LUAJIT_INC = $(shell pkg-config --cflags luajit 2>/dev/null || echo "/usr/local/include/luajit-2.1")
+# LUAJIT_LIB = $(shell pkg-config --libs-only-L luajit 2>/dev/null || echo "/usr/local/lib")
+
+# 目标文件
+TARGETS = lj_sizeof.so
+
+all: $(TARGETS)
+
+lj_sizeof.so: lj_sizeof.c
+	$(CC) $(CFLAGS) -I$(LUAJIT_INC) -L$(LUAJIT_LIB) -o $@ $< -lluajit-5.1
+
+clean:
+	rm -f $(TARGETS) *.o
+
+# 测试
+test: lj_sizeof.so
+	@echo "Testing lj_sizeof..."
+	@luajit -e "local m = require('lj_sizeof'); print('TValue size:', m.type_sizes().TValue)"
+	@luajit -e "local m = require('lj_sizeof'); print('String size:', m.sizeof('hello'))"
+	@luajit -e "local m = require('lj_sizeof'); print('Table size:', m.sizeof({1,2,3}))"
+
+# 完整测试
+fulltest: lj_sizeof.so
+	@if [ -f test_accurate_memory.lua ]; then \
+		echo "Running full test suite..."; \
+		luajit test_accurate_memory.lua; \
+	else \
+		echo "test_accurate_memory.lua not found"; \
+	fi
+
+# 安装
+install: $(TARGETS)
+	@echo "Installing modules..."
+	@LUA_CPATH=$$(luajit -e "print(package.cpath:match('([^;]+)'))"); \
+	if [ -n "$$LUA_CPATH" ]; then \
+		cp $(TARGETS) $$LUA_CPATH/; \
+		echo "Installed to $$LUA_CPATH"; \
+	else \
+		echo "Could not determine Lua cpath"; \
+		exit 1; \
+	fi
+
+# 卸载
+uninstall:
+	@LUA_CPATH=$$(luajit -e "print(package.cpath:match('([^;]+)'))"); \
+	for target in $(TARGETS); do \
+		rm -f $$LUA_CPATH/$$target; \
+	done
+
+# 帮助
+help:
+	@echo "LuaJIT Accurate Memory Calculators"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all       - Build all modules (default)"
+	@echo "  clean     - Remove built files"
+	@echo "  test      - Run basic tests"
+	@echo "  fulltest  - Run complete test suite"
+	@echo "  install   - Install to system lua path"
+	@echo "  uninstall - Remove from system lua path"
+	@echo "  help      - Show this help"
+	@echo ""
+	@echo "Modules:"
+	@echo "  lj_sizeof.so - Accurate object size calculator"
+	@echo ""
+	@echo "Usage example:"
+	@echo "  local sizeof = require('lj_sizeof')"
+	@echo "  print(sizeof.sizeof('hello'))  -- Exact string size"
+	@echo "  print(sizeof.sizeof({1,2,3}))  -- Exact table size"
+
+.PHONY: all clean test fulltest install uninstall help
