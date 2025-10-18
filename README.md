@@ -2,21 +2,68 @@
 
 结合LuaJIT2源码，提供全面的Lua对象内存占用统计方法和工具。
 
+## ⚡ 快速开始
+
+```bash
+# 1. 编译精确计算模块
+make -f Makefile.accurate
+
+# 2. 测试
+luajit -e "local s=require('lj_sizeof'); print('Size:', s.sizeof('hello'))"
+
+# 3. 完整测试
+luajit test_lj_sizeof.lua
+```
+
+**详细教程**: 查看 [QUICK_START.md](QUICK_START.md)
+
 ## 📚 文档
 
+### [QUICK_START.md](QUICK_START.md) ⭐ 新手从这里开始
+三步快速开始，完整示例，常见问题解答
+
+### [ACCURATE_MEMORY_GUIDE.md](ACCURATE_MEMORY_GUIDE.md) ⭐ 精确统计完整指南
+**回答"如何准确（非估算）统计内存"的核心文档**
+- 为什么估算不准确
+- 三种精确统计方法详解（对比表格）
+- LuaJIT内部结构详细剖析
+- 精度对比实验
+
 ### [luajit2-memory-analysis.md](luajit2-memory-analysis.md)
-详尽的LuaJIT2内存管理和统计方法文档，包含：
+详尽的LuaJIT2内存管理和统计方法文档：
 - LuaJIT2内存管理机制概述
 - 各种对象类型的数据结构分析
 - 多种内存统计方案对比
 - 源码级别的实现细节
 - 最佳实践和优化建议
 
+### [SUMMARY.md](SUMMARY.md)
+完整的项目文件总览，API速查，使用场景指南
+
+## 📖 核心文档
+
+### [ACCURATE_MEMORY_GUIDE.md](ACCURATE_MEMORY_GUIDE.md) ⭐⭐⭐ 
+**如何获取精确（非估算）的内存大小**
+- 详解为什么估算不准确
+- 三种精确统计方法对比
+- LuaJIT内部结构详解
+- 精度对比实验
+
 ## 🛠️ 工具
 
-### 1. Lua内存分析器 (`memory_analyzer.lua`)
+### 1. **精确内存计算** (`lj_sizeof.c`) ⭐推荐
 
-纯Lua实现的内存分析工具，无需修改LuaJIT源码即可使用。
+C扩展模块，提供95%+精度的内存计算，无需修改LuaJIT源码。
+
+**编译和使用**:
+```bash
+make -f Makefile.accurate
+luajit -e "local s=require('lj_sizeof'); print(s.sizeof('hello'))"
+```
+
+### 2. Lua内存分析器 (`memory_analyzer.lua`)
+
+纯Lua实现的内存分析工具（估算方式，精度约70%）。
 
 **主要功能：**
 - ✅ 分析全局或指定对象的内存占用
@@ -102,6 +149,19 @@ print("峰值内存:", stats.peak_usage)
 **运行：**
 ```bash
 luajit example_usage.lua
+```
+
+### 4. 精确度测试 (`test_lj_sizeof.lua`)
+
+测试和验证lj_sizeof模块的精确度，对比计算值和GC测量值。
+
+**运行：**
+```bash
+# 先编译C扩展
+make -f Makefile.accurate
+
+# 运行测试
+luajit test_lj_sizeof.lua
 ```
 
 ## 📊 LuaJIT2 对象内存结构
